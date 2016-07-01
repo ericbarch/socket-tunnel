@@ -1,0 +1,18 @@
+{
+  "author": "Eric Barch <ebarch@nooplabs.com>",
+  "name": "socket-tunnel",
+  "description": "Tunnel HTTP Connections via socket.io streams.",
+  "version": "1.0.0",
+  "dependencies": {
+    "bouncy": "3.2.X",
+    "tldjs": "1.6.X",
+    "socket.io": "1.4.X",
+    "socket.io-client": "1.4.X",
+    "socket.io-stream": "0.9.X",
+    "node-uuid": "1.4.X"
+  },
+  "scripts": {
+    "prestart": "npm install",
+    "start": "node server.js"
+  }
+}
