@@ -14,5 +14,6 @@
   "scripts": {
     "prestart": "npm install",
     "start": "node server.js"
-  }
+  },
+  "license": "MIT"
 }

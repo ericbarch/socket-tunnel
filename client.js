@@ -27,7 +27,7 @@ socket.on('incomingClient', function (clientId) {
     ss(socket).emit(clientId, s);
   });
 
-  client.on('error', function() {
+  client.on('error', function () {
     // handle connection refusal
     var s = ss.createStream();
     ss(socket).emit(clientId, s);
