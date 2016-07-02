@@ -12,7 +12,6 @@
     "node-uuid": "1.4.X"
   },
   "scripts": {
-    "prestart": "npm install",
     "start": "node server.js"
   },
   "license": "MIT"

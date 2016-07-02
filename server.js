@@ -59,25 +59,27 @@ io.on('connection', function (socket) {
 
     // make sure the client is requesting an alphanumeric of reasonable length
     if (/[^a-zA-Z0-9]/.test(reqNameNormalized) || reqNameNormalized.length === 0 || reqNameNormalized.length > 63) {
-      console.log(reqNameNormalized + ' -- bad subdomain. disconnecting client.');
+      console.log(new Date() + ': ' + reqNameNormalized + ' -- bad subdomain. disconnecting client.');
       return socket.disconnect();
     }
 
     // make sure someone else hasn't claimed this subdomain
     if (socketsByName[reqNameNormalized]) {
-      console.log(reqNameNormalized + ' requested but already claimed. disconnecting client.');
+      console.log(new Date() + ': ' + reqNameNormalized + ' requested but already claimed. disconnecting client.');
       return socket.disconnect();
     }
 
     // store a reference to this socket by the subdomain claimed
     socketsByName[reqNameNormalized] = socket;
     socket.requestedName = reqNameNormalized;
+    console.log(new Date() + ': ' + reqNameNormalized + ' registered successfully');
   });
 
   // when a client disconnects, we need to remove their association
   socket.on('disconnect', function () {
     if (socket.requestedName) {
       delete socketsByName[socket.requestedName];
+      console.log(new Date() + ': ' + socket.requestedName + ' unregistered');
     }
   });
 });
