@@ -22,7 +22,7 @@ http://ericbarch.com/post/143994549052/tunneling-http-connections-via-socketio-s
 3. Set TUNNEL\_SERVER in client.js to point to your server's domain name
 4. node client.js
 5. Browse to http://REQUESTED\_SUBDOMAIN.YOURDOMAIN.com
-6. See your service running on http://127.0.0.1:LOCAL\_PORT available on the public internet
+6. See your service running on http://127.0.0.1:LOCAL_PORT available on the public internet
 
 ## TODO
 
