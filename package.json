@@ -4,6 +4,7 @@
   "description": "Tunnel HTTP Connections via socket.io streams.",
   "version": "1.0.0",
   "dependencies": {
+    "optimist": "^0.6.1",
     "tldjs": "2.1.X",
     "socket.io": "2.0.X",
     "socket.io-client": "2.0.X",
