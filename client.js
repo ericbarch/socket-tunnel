@@ -2,7 +2,7 @@ module.exports = function (options) {
     // require the things we need
     var net = require('net');
     var ss = require('socket.io-stream');
-    var socket = require('socket.io-client')(options['tunnel-server']);
+    var socket = require('socket.io-client')(options['server']);
 
     socket.on('connect', function () {
         console.log(new Date() + ': connected');

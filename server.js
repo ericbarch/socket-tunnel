@@ -43,7 +43,7 @@ module.exports = function(options) {
             res.statusCode = 502;
             res.end(clientId + ' is currently unregistered or offline.');
         } else {
-            var requestGUID = uuid.v4();
+            var requestGUID = uuid();
 
             client.emit('incomingClient', requestGUID);
 
@@ -72,16 +72,16 @@ module.exports = function(options) {
 
                     // Push headers data
                     for (var i = 0; i < (req.rawHeaders.length-1); i += 2) {
-                        arr.push(req.rawHeaders[i] + ': ' + req.rawHeaders[i+1]);
+                        messageParts.push(req.rawHeaders[i] + ': ' + req.rawHeaders[i+1]);
                     }
                     // Push delimiter
-                    arr.push('');
+                    messageParts.push('');
 
                     // Push request body data
-                    arr.push(Buffer.concat(postData).toString());
+                    messageParts.push(Buffer.concat(postData).toString());
 
                     // Push delimiter
-                    arr.push('');
+                    messageParts.push('');
 
                     var message = messageParts.join('\r\n');
 
