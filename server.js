@@ -26,14 +26,11 @@ module.exports = (options) => {
       return res.end('Invalid subdomain');
     }
 
-    // mysub.ericbarch.metalpicase.com
-
     // tldjs library return subdomain as all subdomain path from the main domain.
     // Example:
     // 1. super.example.com = super
     // 2. my.super.example.com = my.super
-    // If want to run tunnel server on subdomain, then must use option serverSubdomainHost
-    // and correctly trim returned subdomain by tldjs
+    // If we are running the tunnel server on a subdomain, we must strip it from the provided hostname
     if (options.subdomain) {
       subdomain = subdomain.replace(`.${options.subdomain}`, '');
     }
