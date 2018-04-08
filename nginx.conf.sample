@@ -1,7 +1,6 @@
-# Example of nginx config to proxying requests to socket-tunnel server
+# Example of nginx config for proxying requests to socket-tunnel server
 server {
-    # 10.10.0.1 is an external ip of your server
-    listen 10.10.0.1:443;
+    listen *:443;
 
     server_name subdomain.example.com *.subdomain.example.com;
 

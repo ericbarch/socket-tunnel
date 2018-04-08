@@ -1,42 +1,42 @@
 #!/usr/bin/env node
-var optimist = require('optimist');
+const optimist = require('optimist');
 
-var argv = optimist
-    .usage('Usage: $0 --server [string] --subdomain [string] --hostname [string] --port [number]')
-    .options('s', {
-        alias: 'server',
-        describe: '(Required) Tunnel server endpoint'
-    })
-    .options('sub', {
-        alias: 'subdomain',
-        describe: '(Required) Name of tunneling resource'
-    })
-    .options('h', {
-        alias: 'hostname',
-        default: '127.0.0.1',
-        describe: 'Address of local server for forwarding over socket-tunnel'
-    })
-    .options('p', {
-        alias: 'port',
-        describe: '(Required) Port of local server for forwarding over socket-tunnel'
-    })
-    .argv;
+let argv = optimist
+  .usage('Usage: $0 --server [string] --subdomain [string] --hostname [string] --port [number]')
+  .options('s', {
+    alias: 'server',
+    describe: '(Required) Tunnel server endpoint'
+  })
+  .options('sub', {
+    alias: 'subdomain',
+    describe: '(Required) Public URL the tunnel server is forwarding to us'
+  })
+  .options('h', {
+    alias: 'hostname',
+    default: '127.0.0.1',
+    describe: 'Address of local server for forwarding over socket-tunnel'
+  })
+  .options('p', {
+    alias: 'port',
+    describe: '(Required) Port of local server for forwarding over socket-tunnel'
+  })
+  .argv;
 
 if (argv.help) {
-    optimist.showHelp();
-    process.exit();
+  optimist.showHelp();
+  process.exit();
 }
 
 if (!argv['server'] || !argv['subdomain'] || !argv['port']) {
-    for (var key in ['server', 'subdomain', 'port']) {
-        if (!!argv[key]) continue;
+  for (var key in ['server', 'subdomain', 'port']) {
+    if (argv[key]) continue;
 
-        console.log('Error: Required option , but nothing found');
+    console.log('Error: Required option, but nothing found');
 
-        optimist.showHelp();
+    optimist.showHelp();
 
-        process.exit();
-    }
+    process.exit();
+  }
 }
 
 require('../client.js')(argv);

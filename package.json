@@ -5,14 +5,11 @@
   "version": "1.0.0",
   "dependencies": {
     "optimist": "^0.6.1",
-    "tldjs": "2.1.X",
-    "socket.io": "2.0.X",
-    "socket.io-client": "2.0.X",
-    "socket.io-stream": "0.9.X",
-    "uuid": "3.1.X"
-  },
-  "scripts": {
-    "start": "node server.js"
+    "tldjs": "^2.3.1",
+    "socket.io": "^2.1.0",
+    "socket.io-client": "^2.1.0",
+    "socket.io-stream": "^0.9.1",
+    "uuid": "^3.2.1"
   },
   "license": "MIT"
 }

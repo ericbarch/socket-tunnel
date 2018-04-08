@@ -2,27 +2,27 @@
 var optimist = require('optimist');
 
 var argv = optimist
-    .usage('Usage: $0 --hostname [string] --port [number] --subdomain [string]')
-    .options('h', {
-        alias: 'hostname',
-        default: '127.0.0.1',
-        describe: 'Accepts connections on the hostname'
-    })
-    .options('p', {
-        alias: 'port',
-        default: 3000,
-        describe: 'Listens port in OS'
-    })
-    .options('s', {
-        alias: 'subdomain',
-        default: '',
-        describe: "Name of subdomain uses. It's required when server listens on a subdomain."
-    })
-    .argv;
+  .usage('Usage: $0 --hostname [string] --port [number] --subdomain [string]')
+  .options('h', {
+    alias: 'hostname',
+    default: '0.0.0.0',
+    describe: 'Accept connections on this hostname'
+  })
+  .options('p', {
+    alias: 'port',
+    default: 3000,
+    describe: 'Server daemon port'
+  })
+  .options('s', {
+    alias: 'subdomain',
+    default: '',
+    describe: 'Name of subdomain used. Required when server listens on a subdomain (leave blank otherwise)'
+  })
+  .argv;
 
 if (argv.help) {
-    optimist.showHelp();
-    process.exit();
+  optimist.showHelp();
+  process.exit();
 }
 
 require('../server.js')(argv);
