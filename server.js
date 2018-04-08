@@ -23,23 +23,27 @@ module.exports = (options) => {
 
       let reqBody = [];
 
-      // Collect data of POST/PUT request to array buffer
-      req.on('data', (data) => {
-        reqBody.push(data);
+      // Collect body chunks
+      req.on('data', (chunk) => {
+        reqBody.push(chunk);
       });
 
-      // Proxy ended GET/POST/PUT/DELETE request to tunnel stream
+      // Proxy finalized request to tunnel stream
       req.on('end', () => {
         let messageParts = getHeaderPartsForReq(req);
 
         // Push request body data
-        messageParts.push(Buffer.concat(reqBody).toString());
+        if (reqBody.length > 0) {
+          messageParts.push(Buffer.concat(reqBody).toString());
+
+          // Push delimiter
+          messageParts.push('');
+        }
 
         // Push delimiter
         messageParts.push('');
 
         let message = messageParts.join('\r\n');
-
         tunnelClientStream.write(message);
       });
     }).catch((subdomainErr) => {
@@ -59,7 +63,9 @@ module.exports = (options) => {
 
       // get the upgrade request and send it to the tunnel client
       let messageParts = getHeaderPartsForReq(req);
+
       messageParts.push(''); // Push delimiter
+
       let message = messageParts.join('\r\n');
       tunnelClientStream.write(message);
 
@@ -116,9 +122,9 @@ module.exports = (options) => {
     let messageParts = [];
 
     // Push request data
-    messageParts.push([req.method + ' ' + req.url + ' HTTP/' + req.httpVersion]);
+    messageParts.push(`${req.method} ${req.url} HTTP/${req.httpVersion}`);
 
-    // Push headers data
+    // Push header data
     for (let i = 0; i < (req.rawHeaders.length - 1); i += 2) {
       messageParts.push(req.rawHeaders[i] + ': ' + req.rawHeaders[i + 1]);
     }
