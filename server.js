@@ -11,86 +11,123 @@ module.exports = (options) => {
   let socketsBySubdomain = {};
 
   // bounce incoming http requests to socket.io
-  let server = http.createServer((req, res) => {
-    // without a hostname, we won't know who the request is for
-    let hostname = req.headers.host;
-    if (!hostname) {
-      res.statusCode = 502;
-      return res.end('Invalid hostname');
-    }
-
-    // make sure we received a subdomain
-    let subdomain = tldjs.getSubdomain(hostname);
-    if (!subdomain) {
-      res.statusCode = 502;
-      return res.end('Invalid subdomain');
-    }
-
-    // tldjs library return subdomain as all subdomain path from the main domain.
-    // Example:
-    // 1. super.example.com = super
-    // 2. my.super.example.com = my.super
-    // If we are running the tunnel server on a subdomain, we must strip it from the provided hostname
-    if (options.subdomain) {
-      subdomain = subdomain.replace(`.${options.subdomain}`, '');
-    }
-
-    let clientId = subdomain.toLowerCase();
-    let client = socketsBySubdomain[clientId];
-
-    // no such subdomain
-    // we use a 502 error to the client to signify we can't service the request
-    if (!client) {
-      res.statusCode = 502;
-      res.end(clientId + ' is currently unregistered or offline.');
-    } else {
-      let requestGUID = uuid();
-
-      client.emit('incomingClient', requestGUID);
-
-      ss(client).once(requestGUID, (tunnelClientStream) => {
-        tunnelClientStream.on('error', () => {
-          req.destroy();
-          tunnelClientStream.destroy();
-        });
-
-        // Pipe all data from tunnel stream to requesting connection
-        tunnelClientStream.pipe(req.connection);
-
-        let postData = [];
-
-        // Collect data of POST/PUT request to array buffer
-        req.on('data', (data) => {
-          postData.push(data);
-        });
-
-        // Proxy ended GET/POST/PUT/DELETE request to tunnel stream
-        req.on('end', () => {
-          let messageParts = [];
-
-          // Push request data
-          messageParts.push([req.method + ' ' + req.url + ' HTTP/' + req.httpVersion]);
-
-          // Push headers data
-          for (let i = 0; i < (req.rawHeaders.length - 1); i += 2) {
-            messageParts.push(req.rawHeaders[i] + ': ' + req.rawHeaders[i + 1]);
-          }
-          // Push delimiter
-          messageParts.push('');
-
-          // Push request body data
-          messageParts.push(Buffer.concat(postData).toString());
-
-          // Push delimiter
-          messageParts.push('');
-
-          let message = messageParts.join('\r\n');
-
-          tunnelClientStream.write(message);
-        });
+  let server = http.createServer(async (req, res) => {
+    getTunnelClientStreamForReq(req).then((tunnelClientStream) => {
+      tunnelClientStream.on('error', () => {
+        req.destroy();
+        tunnelClientStream.destroy();
       });
-    }
+
+      // Pipe all data from tunnel stream to requesting connection
+      tunnelClientStream.pipe(req.connection);
+
+      let reqBody = [];
+
+      // Collect data of POST/PUT request to array buffer
+      req.on('data', (data) => {
+        reqBody.push(data);
+      });
+
+      // Proxy ended GET/POST/PUT/DELETE request to tunnel stream
+      req.on('end', () => {
+        let messageParts = getHeaderPartsForReq(req);
+
+        // Push request body data
+        messageParts.push(Buffer.concat(reqBody).toString());
+
+        // Push delimiter
+        messageParts.push('');
+
+        let message = messageParts.join('\r\n');
+
+        tunnelClientStream.write(message);
+      });
+    }).catch((subdomainErr) => {
+      res.statusCode = 502;
+      return res.end(subdomainErr.message);
+    });
   });
+
+  // pass along HTTP upgrades (i.e. websockets) to tunnels
+  server.on('upgrade', (req, socket, head) => {
+    getTunnelClientStreamForReq(req).then((tunnelClientStream) => {
+      tunnelClientStream.on('error', () => {
+        req.destroy();
+        socket.destroy();
+        tunnelClientStream.destroy();
+      });
+
+      // get the upgrade request and send it to the tunnel client
+      let messageParts = getHeaderPartsForReq(req);
+      messageParts.push(''); // Push delimiter
+      let message = messageParts.join('\r\n');
+      tunnelClientStream.write(message);
+
+      // pipe data between ingress socket and tunnel client
+      tunnelClientStream.pipe(socket).pipe(tunnelClientStream);
+    }).catch((subdomainErr) => {
+      // if we get an invalid subdomain, this socket is most likely being handled by the root socket.io server
+      if (!subdomainErr.message.includes('Invalid subdomain')) {
+        socket.end();
+      }
+    });
+  });
+
+  function getTunnelClientStreamForReq (req) {
+    return new Promise((resolve, reject) => {
+      // without a hostname, we won't know who the request is for
+      let hostname = req.headers.host;
+      if (!hostname) {
+        return reject(new Error('Invalid hostname'));
+      }
+
+      // make sure we received a subdomain
+      let subdomain = tldjs.getSubdomain(hostname);
+      if (!subdomain) {
+        return reject(new Error('Invalid subdomain'));
+      }
+
+      // tldjs library return subdomain as all subdomain path from the main domain.
+      // Example:
+      // 1. super.example.com = super
+      // 2. my.super.example.com = my.super
+      // 3. If we are running the tunnel server on a subdomain, we must strip it from the provided hostname
+      if (options.subdomain) {
+        subdomain = subdomain.replace(`.${options.subdomain}`, '');
+      }
+
+      let clientId = subdomain.toLowerCase();
+      let subdomainSocket = socketsBySubdomain[clientId];
+
+      if (!subdomainSocket) {
+        return reject(new Error(`${clientId} is currently unregistered or offline.`));
+      }
+
+      let requestGUID = uuid();
+      ss(subdomainSocket).once(requestGUID, (tunnelClientStream) => {
+        resolve(tunnelClientStream);
+      });
+
+      subdomainSocket.emit('incomingClient', requestGUID);
+    });
+  }
+
+  function getHeaderPartsForReq (req) {
+    let messageParts = [];
+
+    // Push request data
+    messageParts.push([req.method + ' ' + req.url + ' HTTP/' + req.httpVersion]);
+
+    // Push headers data
+    for (let i = 0; i < (req.rawHeaders.length - 1); i += 2) {
+      messageParts.push(req.rawHeaders[i] + ': ' + req.rawHeaders[i + 1]);
+    }
+
+    // Push delimiter
+    messageParts.push('');
+
+    return messageParts;
+  }
 
   // socket.io instance
   let io = require('socket.io')(server);
