@@ -4,7 +4,7 @@ Tunnel HTTP (and websocket!) connections via socket.io streams. Inspired by [loc
 
 ## Blog Post
 
-http://ericbarch.com/post/143994549052/tunneling-http-connections-via-socketio-streams
+https://ericbarch.com/post/sockettunnel/
 
 ## Server Usage
 
