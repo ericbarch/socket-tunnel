@@ -10,7 +10,13 @@ module.exports = (options) => {
     console.log(new Date() + ': connected');
     console.log(new Date() + ': requesting subdomain ' + options['subdomain'] + ' via ' + options['server']);
 
-    socket.emit('createTunnel', options['subdomain']);
+    socket.emit('createTunnel', options['subdomain'], (err) => {
+      if (err) {
+        console.log(new Date() + ': [error] ' + err);
+      } else {
+        console.log(new Date() + ': registered with server successfully');
+      }
+    });
   });
 
   socket.on('incomingClient', (clientId) => {

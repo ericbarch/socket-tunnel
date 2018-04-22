@@ -6,6 +6,7 @@ module.exports = (options) => {
   const tldjs = require('tldjs');
   const ss = require('socket.io-stream');
   const uuid = require('uuid/v4');
+  const isValidDomain = require('is-valid-domain');
 
   // association between subdomains and socket.io sockets
   let socketsBySubdomain = {};
@@ -138,7 +139,7 @@ module.exports = (options) => {
   // socket.io instance
   let io = require('socket.io')(server);
   io.on('connection', (socket) => {
-    socket.on('createTunnel', (requestedName) => {
+    socket.on('createTunnel', (requestedName, responseCb) => {
       if (socket.requestedName) {
         // tunnel has already been created
         return;
@@ -147,15 +148,21 @@ module.exports = (options) => {
       // domains are case insensitive
       let reqNameNormalized = requestedName.toLowerCase();
 
-      // make sure the client is requesting an alphanumeric of reasonable length
-      if (/[^a-zA-Z0-9]/.test(reqNameNormalized) || reqNameNormalized.length === 0 || reqNameNormalized.length > 63) {
+      // make sure the client is requesting a valid subdomain
+      if (reqNameNormalized.length === 0 || !isValidDomain(`${reqNameNormalized}.example.com`)) {
         console.log(new Date() + ': ' + reqNameNormalized + ' -- bad subdomain. disconnecting client.');
+        if (responseCb) {
+          responseCb('bad subdomain');
+        }
         return socket.disconnect();
       }
 
       // make sure someone else hasn't claimed this subdomain
       if (socketsBySubdomain[reqNameNormalized]) {
         console.log(new Date() + ': ' + reqNameNormalized + ' requested but already claimed. disconnecting client.');
+        if (responseCb) {
+          responseCb('subdomain already claimed');
+        }
         return socket.disconnect();
       }
 
@@ -163,6 +170,10 @@ module.exports = (options) => {
       socketsBySubdomain[reqNameNormalized] = socket;
       socket.requestedName = reqNameNormalized;
       console.log(new Date() + ': ' + reqNameNormalized + ' registered successfully');
+
+      if (responseCb) {
+        responseCb(null);
+      }
     });
 
     // when a client disconnects, we need to remove their association
