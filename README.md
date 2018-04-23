@@ -42,11 +42,7 @@ socketTunnel.connect('http://YOURDOMAIN.com', 'YOURSUBDOMAIN', '8000')
 
 ## Client API Parameters
 
-`socketTunnel.connect()` returns a promise which resolves to the requested URL/subdomain
-
-```JavaScript
-socketTunnel.connect(remoteServer, desiredSubdomain, localPort, localHostname);
-```
+`socketTunnel.connect(remoteServer, desiredSubdomain, localPort, localHostname)` returns a promise which resolves to the requested URL/subdomain
 
 | Property         | Default     | Description                                        |
 |------------------|-------------|----------------------------------------------------|
