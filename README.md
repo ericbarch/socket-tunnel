@@ -15,13 +15,37 @@ https://ericbarch.com/post/sockettunnel/
 5. Point your domain name's root A record at your server's IP
 6. Point a wildcard (*) A record at your server's IP
 
-## Client Usage
+## Client CLI Usage
 
 1. Start your http server that you'd like to expose to the public web (in this example we'll assume it's listening on 127.0.0.1:8000)
 2. Clone this repo and cd into it
 3. `npm i`
 4. `node bin/client --server http://YOURDOMAIN.com --subdomain YOURSUBDOMAIN --hostname 127.0.0.1 --port 8000`
 5. Browse to http://YOURSUBDOMAIN.YOURDOMAIN.com to see your local service available on the public internet
+
+## Client API Usage
+
+Assuming a web server running on 127.0.0.1:8000
+
+1. Clone this repo into your project
+2. `npm i`
+3. In your project file require socket-tunnel api and run connect():
+```JavaScript
+const socketTunnel = require('./socket-tunnel/lib/api')
+
+socketTunnel.connect("http://YOURDOMAIN.com", "YOURSUBDOMAIN", "8000",)
+.then(console.log)
+.catch(console.log)
+```
+4. Browse to http://YOURSUBDOMAIN.YOURDOMAIN.com to see your local service available on the public internet
+
+
+```Javascript
+// running socketTunnel.connect() returns a promise which resolves to the requested url or catches any errors. Both return strings.
+// options:
+// your server domain name, subdomain to request, port of local server, hostname of local server (optional. defaults to 127.0.0.1)
+socketTunnel.connect(server, subdomain, port)
+```
 
 ## Credits
 
