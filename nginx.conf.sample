@@ -3,7 +3,7 @@
 server {
     listen *:80;
     server_name subdomain.example.com *.subdomain.example.com;
-    rewrite     ^   https://$host$request_uri? permanent;
+    rewrite ^ https://$host$request_uri? permanent;
 }
 
 server {

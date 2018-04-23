@@ -4,7 +4,7 @@ Tunnel HTTP (and websocket!) connections via socket.io streams. Inspired by [loc
 
 ## Blog Post
 
-https://ericbarch.com/post/sockettunnel/
+[Read all about it](https://ericbarch.com/post/sockettunnel/)
 
 ## Server Usage
 
@@ -29,27 +29,35 @@ Assuming a web server running on 127.0.0.1:8000
 
 1. Clone this repo into your project
 2. `npm i`
-3. In your project file require socket-tunnel api and run connect():
-```JavaScript
-const socketTunnel = require('./socket-tunnel/lib/api')
+3. In your project file, require the socket-tunnel api and call connect():
 
-socketTunnel.connect("http://YOURDOMAIN.com", "YOURSUBDOMAIN", "8000",)
-.then(console.log)
-.catch(console.log)
+```JavaScript
+const socketTunnel = require('./socket-tunnel/lib/api');
+
+socketTunnel.connect('http://YOURDOMAIN.com', 'YOURSUBDOMAIN', '8000')
+  .then(console.log)
+  .catch(console.log);
 ```
 4. Browse to http://YOURSUBDOMAIN.YOURDOMAIN.com to see your local service available on the public internet
 
+## Client API Parameters
 
-```Javascript
-// running socketTunnel.connect() returns a promise which resolves to the requested url or catches any errors. Both return strings.
-// options:
-// your server domain name, subdomain to request, port of local server, hostname of local server (optional. defaults to 127.0.0.1)
-socketTunnel.connect(server, subdomain, port)
+`socketTunnel.connect()` returns a promise which resolves to the requested URL/subdomain
+
+```JavaScript
+socketTunnel.connect(remoteServer, desiredSubdomain, localPort, localHostname);
 ```
+
+| Property         | Default     | Description                                        |
+|------------------|-------------|----------------------------------------------------|
+| remoteServer     | n/a         | IP address or hostname of the socket-tunnel server |
+| desiredSubdomain | n/a         | Subdomain to request for this client               |
+| localPort        | n/a         | Local port to tunnel to                            |
+| localHostname    | '127.0.0.1' | Local host to tunnel to                            |
 
 ## Credits
 
-Created by Eric Barch.
+Created by Eric Barch. Additional code provided by [these generous contributors](https://github.com/ericbarch/socket-tunnel/graphs/contributors).
 
 ## License
 
