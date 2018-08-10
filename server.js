@@ -14,14 +14,6 @@ module.exports = (options) => {
   // bounce incoming http requests to socket.io
   let server = http.createServer(async (req, res) => {
     getTunnelClientStreamForReq(req).then((tunnelClientStream) => {
-      tunnelClientStream.on('error', () => {
-        req.destroy();
-        tunnelClientStream.destroy();
-      });
-
-      // Pipe all data from tunnel stream to requesting connection
-      tunnelClientStream.pipe(req.connection);
-
       let reqBody = [];
 
       // Collect body chunks
@@ -53,32 +45,32 @@ module.exports = (options) => {
     });
   });
 
-  // pass along HTTP upgrades (i.e. websockets) to tunnels
-  server.on('upgrade', (req, socket, head) => {
-    getTunnelClientStreamForReq(req).then((tunnelClientStream) => {
-      tunnelClientStream.on('error', () => {
-        req.destroy();
-        socket.destroy();
-        tunnelClientStream.destroy();
-      });
+  // HTTP upgrades (i.e. websockets) are NOT currently supported because socket.io relies on them
+  // server.on('upgrade', (req, socket, head) => {
+  //   getTunnelClientStreamForReq(req).then((tunnelClientStream) => {
+  //     tunnelClientStream.on('error', () => {
+  //       req.destroy();
+  //       socket.destroy();
+  //       tunnelClientStream.destroy();
+  //     });
 
-      // get the upgrade request and send it to the tunnel client
-      let messageParts = getHeaderPartsForReq(req);
+  //     // get the upgrade request and send it to the tunnel client
+  //     let messageParts = getHeaderPartsForReq(req);
 
-      messageParts.push(''); // Push delimiter
+  //     messageParts.push(''); // Push delimiter
 
-      let message = messageParts.join('\r\n');
-      tunnelClientStream.write(message);
+  //     let message = messageParts.join('\r\n');
+  //     tunnelClientStream.write(message);
 
-      // pipe data between ingress socket and tunnel client
-      tunnelClientStream.pipe(socket).pipe(tunnelClientStream);
-    }).catch((subdomainErr) => {
-      // if we get an invalid subdomain, this socket is most likely being handled by the root socket.io server
-      if (!subdomainErr.message.includes('Invalid subdomain')) {
-        socket.end();
-      }
-    });
-  });
+  //     // pipe data between ingress socket and tunnel client
+  //     tunnelClientStream.pipe(socket).pipe(tunnelClientStream);
+  //   }).catch((subdomainErr) => {
+  //     // if we get an invalid subdomain, this socket is most likely being handled by the root socket.io server
+  //     if (!subdomainErr.message.includes('Invalid subdomain')) {
+  //       socket.end();
+  //     }
+  //   });
+  // });
 
   function getTunnelClientStreamForReq (req) {
     return new Promise((resolve, reject) => {
@@ -110,8 +102,22 @@ module.exports = (options) => {
         return reject(new Error(`${clientId} is currently unregistered or offline.`));
       }
 
+      if (req.connection.tunnelClientStream !== undefined && !req.connection.tunnelClientStream.destroyed) {
+        return resolve(req.connection.tunnelClientStream);
+      }
+
       let requestGUID = uuid();
       ss(subdomainSocket).once(requestGUID, (tunnelClientStream) => {
+        req.connection.tunnelClientStream = tunnelClientStream;
+
+        // Pipe all data from tunnel stream to requesting connection
+        tunnelClientStream.pipe(req.connection);
+
+        // ensure that we kill the remote socket if the http connection drops
+        req.connection.on('end', () => {
+          tunnelClientStream.destroy();
+        });
+
         resolve(tunnelClientStream);
       });
 

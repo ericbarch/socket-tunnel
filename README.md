@@ -1,6 +1,6 @@
 # socket-tunnel
 
-Tunnel HTTP (and websocket!) connections via socket.io streams. Inspired by [localtunnel](https://github.com/localtunnel/localtunnel).
+Tunnel HTTP connections via socket.io streams. Inspired by [localtunnel](https://github.com/localtunnel/localtunnel).
 
 ## Blog Post
 
