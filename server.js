@@ -81,7 +81,7 @@ module.exports = (options) => {
       }
 
       // make sure we received a subdomain
-      let subdomain = tldjs.getSubdomain(hostname);
+      let subdomain = tldjs.getSubdomain(hostname).toLowerCase();
       if (!subdomain) {
         return reject(new Error('Invalid subdomain'));
       }
@@ -95,19 +95,18 @@ module.exports = (options) => {
         subdomain = subdomain.replace(`.${options.subdomain}`, '');
       }
 
-      let clientId = subdomain.toLowerCase();
-      let subdomainSocket = socketsBySubdomain[clientId];
-
+      let subdomainSocket = socketsBySubdomain[subdomain];
       if (!subdomainSocket) {
-        return reject(new Error(`${clientId} is currently unregistered or offline.`));
+        return reject(new Error(`${subdomain} is currently unregistered or offline.`));
       }
 
-      if (req.connection.tunnelClientStream !== undefined && !req.connection.tunnelClientStream.destroyed) {
+      if (req.connection.tunnelClientStream !== undefined && !req.connection.tunnelClientStream.destroyed && req.connection.subdomain === subdomain) {
         return resolve(req.connection.tunnelClientStream);
       }
 
       let requestGUID = uuid();
       ss(subdomainSocket).once(requestGUID, (tunnelClientStream) => {
+        req.connection.subdomain = subdomain;
         req.connection.tunnelClientStream = tunnelClientStream;
 
         // Pipe all data from tunnel stream to requesting connection
