@@ -112,11 +112,6 @@ module.exports = (options) => {
         // Pipe all data from tunnel stream to requesting connection
         tunnelClientStream.pipe(req.connection);
 
-        // ensure that we kill the remote socket if the http connection drops
-        req.connection.on('end', () => {
-          tunnelClientStream.destroy();
-        });
-
         resolve(tunnelClientStream);
       });
 

@@ -1,5 +1,7 @@
 'use strict';
 
+const IDLE_SOCKET_TIMEOUT_MILLISECONDS = 1000 * 30;
+
 module.exports = (options) => {
   return new Promise((resolve, reject) => {
     // require the things we need
@@ -48,6 +50,11 @@ module.exports = (options) => {
         });
 
         ss(socket).emit(clientId, s);
+      });
+
+      client.setTimeout(IDLE_SOCKET_TIMEOUT_MILLISECONDS);
+      client.on('timeout', () => {
+        client.end();
       });
 
       client.on('error', () => {
