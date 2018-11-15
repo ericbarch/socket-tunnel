@@ -14,30 +14,31 @@ module.exports = (options) => {
   // bounce incoming http requests to socket.io
   let server = http.createServer(async (req, res) => {
     getTunnelClientStreamForReq(req).then((tunnelClientStream) => {
-      let reqBody = [];
+      const reqBodyChunks = [];
 
-      // Collect body chunks
-      req.on('data', (chunk) => {
-        reqBody.push(chunk);
+      req.on('error', (err) => {
+        console.error(err.stack);
       });
 
-      // Proxy finalized request to tunnel stream
+      // collect body chunks
+      req.on('data', (bodyChunk) => {
+        reqBodyChunks.push(bodyChunk);
+      });
+
+      // proxy finalized request to tunnel stream
       req.on('end', () => {
-        let messageParts = getHeaderPartsForReq(req);
+        // make sure the client didn't die on us
+        if (req.complete) {
+          const reqLine = getReqLineFromReq(req);
+          const headers = getHeadersFromReq(req);
 
-        // Push request body data
-        if (reqBody.length > 0) {
-          messageParts.push(Buffer.concat(reqBody).toString());
+          let reqBody = null;
+          if (reqBodyChunks.length > 0) {
+            reqBody = Buffer.concat(reqBodyChunks);
+          }
 
-          // Push delimiter
-          messageParts.push('');
+          streamResponse(reqLine, headers, reqBody, tunnelClientStream);
         }
-
-        // Push delimiter
-        messageParts.push('');
-
-        let message = messageParts.join('\r\n');
-        tunnelClientStream.write(message);
       });
     }).catch((subdomainErr) => {
       res.statusCode = 502;
@@ -119,21 +120,28 @@ module.exports = (options) => {
     });
   }
 
-  function getHeaderPartsForReq (req) {
-    let messageParts = [];
+  function getReqLineFromReq (req) {
+    return `${req.method} ${req.url} HTTP/${req.httpVersion}`;
+  }
 
-    // Push request data
-    messageParts.push(`${req.method} ${req.url} HTTP/${req.httpVersion}`);
+  function getHeadersFromReq (req) {
+    const headers = [];
 
-    // Push header data
     for (let i = 0; i < (req.rawHeaders.length - 1); i += 2) {
-      messageParts.push(req.rawHeaders[i] + ': ' + req.rawHeaders[i + 1]);
+      headers.push(req.rawHeaders[i] + ': ' + req.rawHeaders[i + 1]);
     }
 
-    // Push delimiter
-    messageParts.push('');
+    return headers;
+  }
 
-    return messageParts;
+  function streamResponse (reqLine, headers, reqBody, tunnelClientStream) {
+    tunnelClientStream.write(reqLine);
+    tunnelClientStream.write('\r\n');
+    tunnelClientStream.write(headers.join('\r\n'));
+    tunnelClientStream.write('\r\n\r\n');
+    if (reqBody) {
+      tunnelClientStream.write(reqBody);
+    }
   }
 
   // socket.io instance
